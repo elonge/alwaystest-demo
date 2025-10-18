@@ -56,6 +56,13 @@ const VARIATIONS: Variation[] = [
     impact: "medium",
   },
   {
+    id: "image-prominent",
+    name: "Image Prominent",
+    description: "Image-led presentation that mirrors the previous default product card layout.",
+    changes: ["Full-bleed product photography", "Category + title stack", "Price emphasis footer"],
+    impact: "low",
+  },
+  {
     id: "premium",
     name: "Premium Showcase",
     description: "Luxury aesthetic with serif typography and refined gradients.",
@@ -99,6 +106,8 @@ const VARIATIONS: Variation[] = [
   },
 ]
 
+const DEFAULT_ALLOCATION = 1
+
 interface VariationPanelProps {
   onClose: () => void
   onSelectVariation: (variationId: string | null) => void
@@ -111,16 +120,35 @@ export default function VariationPanel({
   previewVariationId,
 }: VariationPanelProps) {
   const [selectedVariations, setSelectedVariations] = useState<Set<string>>(new Set())
+  const [allocationByVariation, setAllocationByVariation] = useState<Record<string, number>>({})
   const variations = VARIATIONS
+  const experimentName = "Homepage Layout Test"
 
   const toggleVariation = (variationId: string) => {
-    const newSelected = new Set(selectedVariations)
-    if (newSelected.has(variationId)) {
-      newSelected.delete(variationId)
-    } else {
-      newSelected.add(variationId)
-    }
-    setSelectedVariations(newSelected)
+    setSelectedVariations((prev) => {
+      const next = new Set(prev)
+      if (next.has(variationId)) {
+        next.delete(variationId)
+        setAllocationByVariation((prevAllocations) => {
+          const { [variationId]: _removed, ...rest } = prevAllocations
+          return rest
+        })
+      } else {
+        next.add(variationId)
+        setAllocationByVariation((prevAllocations) => ({
+          ...prevAllocations,
+          [variationId]: prevAllocations[variationId] ?? DEFAULT_ALLOCATION,
+        }))
+      }
+      return next
+    })
+  }
+
+  const handleAllocationChange = (variationId: string, value: number) => {
+    setAllocationByVariation((prev) => ({
+      ...prev,
+      [variationId]: value,
+    }))
   }
 
   const handleAddToExperiment = () => {
@@ -130,6 +158,7 @@ export default function VariationPanel({
     }
     alert(`Added ${selectedVariations.size} variation(s) to experiment`)
     setSelectedVariations(new Set())
+    setAllocationByVariation({})
   }
 
   return (
@@ -163,6 +192,10 @@ export default function VariationPanel({
                 onToggle={() => toggleVariation(variation.id)}
                 onPreview={() => onSelectVariation(previewVariationId === variation.id ? null : variation.id)}
                 compact={false}
+                testName={experimentName}
+                defaultAllocation={DEFAULT_ALLOCATION}
+                allocation={allocationByVariation[variation.id] ?? DEFAULT_ALLOCATION}
+                onAllocationChange={(value) => handleAllocationChange(variation.id, value)}
               />
             ))
           )}

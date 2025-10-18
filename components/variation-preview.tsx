@@ -66,7 +66,7 @@ export default function VariationPreview({ productId, variationId, onClose }: Va
 
   if (!product) return null
 
-  const previewKey = variationId
+  const previewKey = variationId ?? "comparison"
 
   const renderVariationPreview = () => {
     switch (previewKey) {
@@ -82,6 +82,8 @@ export default function VariationPreview({ productId, variationId, onClose }: Va
         return <UrgencyPreview product={product} />
       case "comparison":
         return <ComparisonPreview product={product} />
+      case "image-prominent":
+        return <ImageProminentPreview product={product} />
       case "premium":
         return <PremiumPreview product={product} />
       case "interactive":
@@ -95,7 +97,7 @@ export default function VariationPreview({ productId, variationId, onClose }: Va
       case "warranty":
         return <WarrantyPreview product={product} />
       default:
-        return <DefaultPreview product={product} />
+        return <ComparisonPreview product={product} />
     }
   }
 
@@ -110,7 +112,7 @@ export default function VariationPreview({ productId, variationId, onClose }: Va
 }
 
 // Variation Preview Components
-function DefaultPreview({ product }: { product: Product }) {
+function ImageProminentPreview({ product }: { product: Product }) {
   return (
     <div className="bg-card rounded-lg border border-border overflow-hidden shadow-lg">
       <div className="aspect-square bg-muted overflow-hidden">
@@ -317,9 +319,9 @@ function ComparisonPreview({ product }: { product: Product }) {
         ))}
       </div>
       <div className="bg-muted/20 p-6">
-        <button className="w-full rounded-lg border border-primary py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/5">
+        <div className="w-full rounded-lg border border-primary py-3 text-center text-sm font-semibold text-primary transition-colors hover:bg-primary/5">
           View full comparison
-        </button>
+        </div>
       </div>
     </div>
   )

@@ -10,6 +10,7 @@ const VARIATION_PREVIEWS: Record<string, VariationPreview> = {
   "social-proof": { name: "Social Proof", content: "⭐ 4.8 (2.3k reviews)" },
   urgency: { name: "Urgency Signals", content: "Only 3 left!" },
   comparison: { name: "Comparison View", content: "Compare options" },
+  "image-prominent": { name: "Image Prominent", content: "Visual-first layout" },
   premium: { name: "Premium Showcase", content: "Luxury styling" },
   interactive: { name: "Interactive Hover", content: "Animated effects" },
   eco: { name: "Eco-Friendly Badge", content: "♻️ Sustainable" },

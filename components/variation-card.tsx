@@ -1,5 +1,15 @@
 "use client"
 
+import {
+  type ChangeEvent,
+  type FocusEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  useEffect,
+  useState,
+} from "react"
+
 import { cn } from "@/lib/utils"
 
 interface Variation {
@@ -17,6 +27,10 @@ interface VariationCardProps {
   onToggle: () => void
   onPreview: () => void
   compact?: boolean
+  testName: string
+  defaultAllocation?: number
+  allocation?: number
+  onAllocationChange?: (value: number) => void
 }
 
 const impactColors = {
@@ -32,125 +46,261 @@ export default function VariationCard({
   onToggle,
   onPreview,
   compact = false,
+  testName,
+  defaultAllocation = 1,
+  allocation,
+  onAllocationChange,
 }: VariationCardProps) {
-  if (compact) {
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const fallbackAllocation = defaultAllocation ?? 1
+  const resolvedAllocation = allocation ?? fallbackAllocation
+  const [allocationInput, setAllocationInput] = useState(() => resolvedAllocation.toString())
+
+  useEffect(() => {
+    if (!isSelected) {
+      setShowConfirmation(false)
+    }
+  }, [isSelected])
+
+  useEffect(() => {
+    setAllocationInput(resolvedAllocation.toString())
+  }, [resolvedAllocation])
+
+  const handleToggle = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    if (!isSelected) {
+      setShowConfirmation(true)
+    } else {
+      setShowConfirmation(false)
+    }
+    onToggle()
+  }
+
+  const handlePreview = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    onPreview()
+  }
+
+  const handleAllocationInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setAllocationInput(event.target.value)
+  }
+
+  const commitAllocation = () => {
+    if (!onAllocationChange) {
+      setAllocationInput(resolvedAllocation.toString())
+      return
+    }
+
+    const parsed = parseFloat(allocationInput)
+    if (!Number.isFinite(parsed)) {
+      setAllocationInput(resolvedAllocation.toString())
+      return
+    }
+
+    const bounded = Math.max(0, Math.min(100, parsed))
+    onAllocationChange(bounded)
+    setAllocationInput(bounded.toString())
+  }
+
+  const handleAllocationInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault()
+      commitAllocation()
+    }
+  }
+
+  const handleClosePopup = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    commitAllocation()
+    setShowConfirmation(false)
+  }
+
+  const handleInputFocus = (event: FocusEvent<HTMLInputElement>) => {
+    event.stopPropagation()
+  }
+
+  const handlePointerDown = (event: PointerEvent<HTMLInputElement>) => {
+    event.stopPropagation()
+  }
+
+  const handleInputClick = (event: MouseEvent<HTMLInputElement>) => {
+    event.stopPropagation()
+  }
+
+  const buttonLabel = isSelected ? "Remove from test" : "Add to test"
+  const previewLabel = isPreview ? "Previewing" : "Preview"
+  const allocationLabel = `${resolvedAllocation}% of users`
+  const allocationSummary = `${resolvedAllocation}% of users`
+  const shouldShowPopup = showConfirmation && isSelected
+  const displayAllocationText =
+    allocationInput.trim() === "" ? allocationLabel : `${allocationInput}% of users`
+
+  const previewButtonClassName = cn(
+    compact
+      ? "inline-flex items-center justify-center rounded-md border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors duration-200"
+      : "inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-sm font-medium transition-colors duration-200",
+    isPreview
+      ? "border-primary bg-primary/10 text-primary"
+      : "border-border bg-background text-primary hover:border-primary hover:bg-primary/10",
+  )
+
+  const toggleButtonClassName = cn(
+    compact
+      ? "inline-flex items-center justify-center rounded-md border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors duration-200"
+      : "inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-sm font-medium transition-colors duration-200",
+    isSelected
+      ? "border-primary bg-primary text-primary-foreground shadow-sm"
+      : "border-border bg-background text-primary hover:border-primary hover:bg-primary/10",
+  )
+
+  const Popup = () => {
+    if (!shouldShowPopup) return null
+
     return (
-      <div
-        className={cn(
-          "flex-shrink-0 w-48 text-left p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer",
-          isPreview
-            ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-            : "border-border bg-background hover:border-primary/30",
-        )}
-      >
-        <div onClick={onPreview} className="mb-2">
-          <p className="text-xs font-medium text-primary uppercase tracking-wide truncate">
-            {isPreview ? "👁️ Preview" : "Click preview"}
-          </p>
+      <div className="absolute top-3 right-3 z-20 w-64 rounded-md border border-border bg-background p-3 text-left shadow-lg">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Test</p>
+            <p className="text-sm font-semibold text-foreground">{testName}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleClosePopup}
+            className="text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Close test details"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <div className="flex items-start gap-2">
-          {/* Checkbox */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggle()
-            }}
-            className={cn(
-              "mt-0.5 h-4 w-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all",
-              isSelected ? "bg-primary border-primary" : "border-border",
-            )}
-          >
-            {isSelected && (
-              <svg className="h-2.5 w-2.5 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
-          </button>
+        <div className="rounded-md border border-border/60 bg-muted/40 px-3 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Audience split</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">{displayAllocationText}</p>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1 mb-1">
-              <h3 className="font-semibold text-foreground text-sm truncate">{variation.name}</h3>
-              <span
-                className={cn(
-                  "text-xs font-medium px-1.5 py-0.5 rounded border flex-shrink-0",
-                  impactColors[variation.impact],
-                )}
-              >
-                {variation.impact.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground line-clamp-2">{variation.description}</p>
+          <div className="mt-3 flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              value={allocationInput}
+              onChange={handleAllocationInputChange}
+              onBlur={commitAllocation}
+              onKeyDown={handleAllocationInputKeyDown}
+              onPointerDown={handlePointerDown}
+              onClick={handleInputClick}
+              onFocus={handleInputFocus}
+              className="h-9 w-24 rounded border border-border bg-background px-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              aria-label="Percent of users seeing this variation"
+              placeholder={fallbackAllocation.toString()}
+            />
+            <span className="text-sm font-medium text-muted-foreground">%</span>
           </div>
         </div>
       </div>
     )
   }
 
-  return (
-    <div
-      className={cn(
-        "w-full text-left p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer",
-        isPreview
-          ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-          : "border-border bg-background hover:border-primary/30",
-      )}
-    >
-      <div onClick={onPreview} className="mb-3 pb-3 border-b border-border/50">
-        <p className="text-xs font-medium text-primary uppercase tracking-wide">
-          {isPreview ? "👁️ Previewing" : "Click to preview"}
-        </p>
-      </div>
+  if (compact) {
+    return (
+      <div
+        onClick={onPreview}
+        className={cn(
+          "relative flex-shrink-0 w-48 cursor-pointer rounded-lg border-2 p-3 text-left transition-all duration-200",
+          isPreview
+            ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+            : isSelected
+              ? "border-primary/60 bg-primary/5 hover:border-primary/40"
+              : "border-border bg-background hover:border-primary/30",
+        )}
+      >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <button type="button" onClick={handlePreview} className={previewButtonClassName}>
+            {previewLabel}
+          </button>
+          <button type="button" onClick={handleToggle} className={toggleButtonClassName}>
+            {buttonLabel}
+          </button>
+        </div>
 
-      <div className="flex items-start gap-3">
-        {/* Checkbox */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggle()
-          }}
-          className={cn(
-            "mt-1 h-5 w-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all",
-            isSelected ? "bg-primary border-primary" : "border-border",
-          )}
-        >
-          {isSelected && (
-            <svg className="h-3 w-3 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          )}
-        </button>
+        {isSelected && (
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-primary">
+            In test • {allocationSummary}
+          </p>
+        )}
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-foreground">{variation.name}</h3>
-            <span className={cn("text-xs font-medium px-2 py-1 rounded border", impactColors[variation.impact])}>
-              {variation.impact}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1">
+            <h3 className="truncate text-sm font-semibold text-foreground">{variation.name}</h3>
+            <span
+              className={cn(
+                "flex-shrink-0 rounded border px-1.5 py-0.5 text-xs font-medium",
+                impactColors[variation.impact],
+              )}
+            >
+              {variation.impact.charAt(0).toUpperCase()}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground mb-3">{variation.description}</p>
+          <p className="text-xs text-muted-foreground line-clamp-2">{variation.description}</p>
+        </div>
 
-          {/* Changes */}
-          <div className="space-y-1">
-            {variation.changes.map((change, idx) => (
-              <div key={idx} className="flex items-start gap-2">
-                <span className="text-primary mt-1">•</span>
-                <span className="text-xs text-muted-foreground">{change}</span>
-              </div>
-            ))}
+        <Popup />
+      </div>
+    )
+  }
+
+  return (
+    <div
+      onClick={onPreview}
+      className={cn(
+        "relative w-full cursor-pointer rounded-lg border-2 p-4 text-left transition-all duration-200",
+        isPreview
+          ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+          : isSelected
+            ? "border-primary/60 bg-primary/20 hover:border-primary/40"
+            : "border-border bg-background hover:border-primary/30",
+      )}
+    >
+      <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/50 pb-3">
+        <button type="button" onClick={handlePreview} className={previewButtonClassName}>
+          {previewLabel}
+        </button>
+        <button type="button" onClick={handleToggle} className={toggleButtonClassName}>
+          {buttonLabel}
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-lg font-semibold text-foreground">{variation.name}</h3>
+          <span className={cn("rounded border px-2 py-1 text-xs font-medium", impactColors[variation.impact])}>
+            {variation.impact}
+          </span>
+        </div>
+
+        {isSelected && (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-sm font-medium text-primary">
+            <span>In test</span>
+            <span className="text-primary/80">•</span>
+            <span>{allocationSummary}</span>
           </div>
+        )}
+
+        <p className="text-sm text-muted-foreground">{variation.description}</p>
+
+        <div className="space-y-1">
+          {variation.changes.map((change, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <span className="text-primary">•</span>
+              <span className="text-xs text-muted-foreground">{change}</span>
+            </div>
+          ))}
         </div>
       </div>
+
+      <Popup />
     </div>
   )
 }
