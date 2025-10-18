@@ -96,6 +96,12 @@ export default function VariationPreview({ productId, variationId, onClose }: Va
         return <ExpertReviewPreview product={product} />
       case "warranty":
         return <WarrantyPreview product={product} />
+      case "lifestyle-story":
+        return <LifestyleStoryPreview product={product} />
+      case "hover-float":
+        return <HoverFloatPreview product={product} />
+      case "fast-buy":
+        return <FastBuyPreview product={product} />
       default:
         return <ComparisonPreview product={product} />
     }
@@ -105,7 +111,7 @@ export default function VariationPreview({ productId, variationId, onClose }: Va
     <div className="flex-1 flex flex-col">
       {/* Preview Area */}
       <div className="flex-1 overflow-auto p-8 flex items-center justify-center">
-        <div className="w-full max-w-md">{renderVariationPreview()}</div>
+        <div className="w-full">{renderVariationPreview()}</div>
       </div>
     </div>
   )
@@ -539,6 +545,188 @@ function WarrantyPreview({ product }: { product: Product }) {
         </div>
         <div className="rounded-xl border border-primary/40 bg-primary/5 p-4 text-sm text-primary">
           Register within 30 days to unlock lifetime device monitoring and VIP support.
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LifestyleStoryPreview({ product }: { product: Product }) {
+  const storyMoments = [
+    {
+      time: "7:10 AM",
+      title: "Ease into the morning",
+      description:
+        "Slip on your headphones while the coffee brews. The day starts with a playlist that fills the kitchen without waking the rest of the house.",
+      icon: "🌅",
+    },
+    {
+      time: "12:30 PM",
+      title: "Stay in rhythm",
+      description:
+        "On the midday commute, the compact fit disappears into your routine, keeping calls crisp and music balanced between meetings.",
+      icon: "🚇",
+    },
+    {
+      time: "8:45 PM",
+      title: "Wind down fully",
+      description:
+        "Evening stretches end with a favorite podcast. The outside world fades so you can settle in, shoulders down, mind at ease.",
+      icon: "🌙",
+    },
+  ]
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-xl">
+      <div className="relative flex flex-col items-start gap-5 bg-gradient-to-br from-purple-700 via-purple-500 to-indigo-500 p-8 text-primary-foreground">
+        <span className="rounded-full bg-white/20 px-3 py-1 text-xs uppercase tracking-[0.3em]">Your day, remixed</span>
+        <h3 className="text-3xl font-semibold">{product.name}</h3>
+        <p className="max-w-md text-sm text-white/80">
+          Follow the product from sunrise to lights-out and feel how it makes every moment just a little more yours.
+        </p>
+        <div className="self-end overflow-hidden rounded-2xl border border-white/20 bg-white/10 p-3 backdrop-blur">
+          <img src={product.image || "/placeholder.svg"} alt={product.name} className="h-32 w-32 object-cover" />
+        </div>
+      </div>
+      <div className="grid gap-6 bg-background/70 p-6">
+        {storyMoments.map((moment) => (
+          <div key={moment.time} className="flex items-start gap-4 rounded-2xl border border-border/50 bg-card/60 p-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-xl text-primary">
+              {moment.icon}
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{moment.time}</p>
+              <p className="text-lg font-semibold text-foreground">{moment.title}</p>
+              <p className="text-sm text-muted-foreground">{moment.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between border-t border-border/60 bg-muted/40 px-6 py-4 text-sm text-muted-foreground">
+        <span>Made to move with you from first alarm to lights-out.</span>
+        <span className="text-lg font-semibold text-primary">${product.price}</span>
+      </div>
+    </div>
+  )
+}
+
+function HoverFloatPreview({ product }: { product: Product }) {
+  const comparisonFeatures = [
+    { name: "Price", ours: `$${product.price}`, theirs: `$${Math.round(product.price * 1.12)}` },
+    { name: "Warranty", ours: "24 months", theirs: "12 months" },
+    { name: "Shipping", ours: "Free 2-day", theirs: "$15 standard" },
+    { name: "Accessories", ours: "Included bundle", theirs: "Sold separately" },
+  ]
+
+  return (
+    <div className="group relative mx-auto max-w-xl">
+      <div className="absolute inset-0 rounded-3xl bg-primary/10 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-lg transition-all duration-300 group-hover:-translate-y-3 group-hover:shadow-2xl">
+        <div className="bg-muted/50 p-6 flex items-center gap-5 transition-colors duration-300 group-hover:bg-muted/40">
+          <div className="h-20 w-20 overflow-hidden rounded-2xl border border-border bg-card shadow-inner transition-transform duration-300 group-hover:-translate-y-1 group-hover:rotate-1 group-hover:shadow-lg">
+            <img
+              src={product.image || "/placeholder.svg"}
+              alt={product.name}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          </div>
+          <div className="flex-1 space-y-1">
+            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Daily driver</p>
+            <h3 className="text-2xl font-semibold text-foreground">{product.name}</h3>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Our price</p>
+            <p className="text-3xl font-bold text-primary">${product.price}</p>
+          </div>
+        </div>
+
+        <div className="divide-y divide-border/60">
+          <div className="grid grid-cols-3 bg-muted/30 px-6 py-3 text-xs font-semibold uppercase text-muted-foreground">
+            <span>Feature</span>
+            <span className="text-primary">Ours</span>
+            <span>Theirs</span>
+          </div>
+          {comparisonFeatures.map((feature) => (
+            <div
+              key={feature.name}
+              className="grid grid-cols-3 px-6 py-4 text-sm transition-colors duration-300 group-hover:bg-muted/20"
+            >
+              <span className="font-medium text-foreground">{feature.name}</span>
+              <span className="text-primary">{feature.ours}</span>
+              <span className="text-muted-foreground">{feature.theirs}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-background/80 px-6 py-5">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Slight lift, stronger focus. Try hovering.</span>
+            <span className="rounded-full border border-primary/40 px-3 py-1 text-xs font-semibold text-primary">
+              Hover ready
+            </span>
+          </div>
+          <div className="mt-4 w-full rounded-xl border border-primary px-4 py-3 text-center text-sm font-semibold text-primary transition-colors duration-300 group-hover:bg-primary/5">
+            View full comparison
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FastBuyPreview({ product }: { product: Product }) {
+  const quickBenefits = [
+    { label: "Ships today", icon: "🚚" },
+    { label: "1-click checkout", icon: "⚡" },
+    { label: "45-day returns", icon: "🛡️" },
+  ]
+
+  return (
+    <div className="mx-auto max-w-4xl rounded-3xl border border-primary/40 bg-card shadow-xl overflow-hidden">
+      <div className="flex flex-col gap-8 p-8 lg:flex-row lg:items-center lg:gap-10">
+        <div className="relative mx-auto h-52 w-52 overflow-hidden rounded-3xl border border-primary/20 bg-muted/30 shadow-inner transition-all duration-300 lg:mx-0 lg:h-56 lg:w-56">
+          <img
+            src={product.image || "/placeholder.svg"}
+            alt={product.name}
+            className="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
+          />
+          <div className="absolute top-4 left-4 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
+            Ready to ship
+          </div>
+        </div>
+
+        <div className="flex-1 space-y-6">
+          <div className="space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary">Fast decision</p>
+            <h3 className="text-3xl font-semibold text-foreground">{product.name}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Essential details upfront with a single action that gets you checked out in seconds.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <p className="text-4xl font-bold text-primary sm:text-5xl">${product.price}</p>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
+              In stock · Free express shipping
+            </span>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            {quickBenefits.map((benefit) => (
+              <div
+                key={benefit.label}
+                className="flex flex-1 items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-3 py-2 text-sm text-muted-foreground"
+              >
+                <span className="text-lg">{benefit.icon}</span>
+                <span>{benefit.label}</span>
+              </div>
+            ))}
+          </div>
+          <button className="w-full rounded-xl bg-primary px-6 py-4 text-lg font-semibold text-primary-foreground shadow-lg transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl">
+            Buy now
+          </button>
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-xs text-primary sm:text-sm">
+            <span className="font-semibold uppercase tracking-[0.2em] text-primary">1-click enabled</span>
+            <span className="text-muted-foreground">Secure payment in under 10 seconds.</span>
+          </div>
         </div>
       </div>
     </div>

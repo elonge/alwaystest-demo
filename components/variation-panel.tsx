@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import VariationCard from "./variation-card"
 import { Button } from "@/components/ui/button"
 
@@ -12,7 +12,15 @@ interface Variation {
   impact: "high" | "medium" | "low"
 }
 
-const VARIATIONS: Variation[] = [
+const FAST_BUY_VARIATION: Variation = {
+  id: "fast-buy",
+  name: "Fast Buy CTA",
+  description: "Streamlined card with primary Buy Now action and instant benefit highlights.",
+  changes: ["Prominent Buy Now button", "Express checkout messaging", "Quick benefits row"],
+  impact: "high",
+}
+
+const BASE_VARIATIONS: Variation[] = [
   {
     id: "minimalist",
     name: "Minimalist Layout",
@@ -104,6 +112,20 @@ const VARIATIONS: Variation[] = [
     changes: ["Warranty summary header", "Year-by-year coverage cards", "Registration reminder banner"],
     impact: "medium",
   },
+  // {
+  //   id: "lifestyle-story",
+  //   name: "Lifestyle Story",
+  //   description: "Narrative-first layout that shows how the product flows through a day in the life.",
+  //   changes: ["Morning, midday, and evening storytelling beats", "Lifestyle imagery integration", "Benefit-driven narration"],
+  //   impact: "medium",
+  // },
+  {
+    id: "hover-float",
+    name: "Hover Float Card",
+    description: "Default layout with a soft lift and shadow that engages on hover.",
+    changes: ["Subtle card elevation", "Animated shadow reveal", "Image tilt on hover"],
+    impact: "low",
+  },
 ]
 
 const DEFAULT_ALLOCATION = 1
@@ -119,9 +141,14 @@ export default function VariationPanel({
   onSelectVariation,
   previewVariationId,
 }: VariationPanelProps) {
+  const [variations, setVariations] = useState<Variation[]>(BASE_VARIATIONS)
   const [selectedVariations, setSelectedVariations] = useState<Set<string>>(new Set())
   const [allocationByVariation, setAllocationByVariation] = useState<Record<string, number>>({})
-  const variations = VARIATIONS
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [newVariationPrompt, setNewVariationPrompt] = useState("")
+  const [creationState, setCreationState] = useState<"idle" | "submitting" | "success">("idle")
+  const creationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const experimentName = "Homepage Layout Test"
 
   const toggleVariation = (variationId: string) => {
@@ -161,6 +188,61 @@ export default function VariationPanel({
     setAllocationByVariation({})
   }
 
+  const handleOpenCreateModal = () => {
+    setIsCreateModalOpen(true)
+    setCreationState("idle")
+    setNewVariationPrompt("")
+  }
+
+  const resetCreateModal = () => {
+    setIsCreateModalOpen(false)
+    setCreationState("idle")
+    setNewVariationPrompt("")
+    creationTimeoutRef.current = null
+    successTimeoutRef.current = null
+  }
+
+  const clearCreationTimers = () => {
+    if (creationTimeoutRef.current) {
+      clearTimeout(creationTimeoutRef.current)
+      creationTimeoutRef.current = null
+    }
+    if (successTimeoutRef.current) {
+      clearTimeout(successTimeoutRef.current)
+      successTimeoutRef.current = null
+    }
+  }
+
+  const handleCloseCreateModal = () => {
+    clearCreationTimers()
+    resetCreateModal()
+  }
+
+  const handleConfirmCreate = () => {
+    if (!newVariationPrompt.trim()) {
+      return
+    }
+    setCreationState("submitting")
+    clearCreationTimers()
+    creationTimeoutRef.current = setTimeout(() => {
+      setCreationState("success")
+      setVariations((previousVariations) => {
+        const withoutFastBuy = previousVariations.filter((variation) => variation.id !== FAST_BUY_VARIATION.id)
+        return [FAST_BUY_VARIATION, ...withoutFastBuy]
+      })
+      onSelectVariation(FAST_BUY_VARIATION.id)
+      successTimeoutRef.current = setTimeout(() => {
+        resetCreateModal()
+      }, 1200)
+    }, 7000)
+  }
+
+  useEffect(() => {
+    return () => {
+      clearCreationTimers()
+    }
+  }, [])
+
   return (
     <div className="flex flex-col h-full bg-card">
       {/* Header */}
@@ -169,11 +251,16 @@ export default function VariationPanel({
           <h2 className="text-lg font-bold text-foreground">Variations</h2>
           <p className="text-xs text-muted-foreground">Previewing updates every product in the grid</p>
         </div>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleOpenCreateModal}>
+            Add variation
+          </Button>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
@@ -205,11 +292,104 @@ export default function VariationPanel({
       {/* Footer */}
       <div className="border-t border-border p-4 flex items-center justify-between">
         <Button onClick={handleAddToExperiment} disabled={selectedVariations.size === 0} size="lg" className="w-full font-semibold">
-          {`Set up experiment with ${selectedVariations.size} variation${
+          {`Continue with ${selectedVariations.size} variation${
             selectedVariations.size === 1 ? "" : "s"
           }`}
         </Button>
       </div>
+
+      {isCreateModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-lg border border-border bg-card shadow-lg">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Create a new variation</h3>
+                <p className="text-xs text-muted-foreground">Use AI or import your latest concept.</p>
+              </div>
+              <button
+                onClick={handleCloseCreateModal}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Close create variation dialog"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-4 py-5">
+              {creationState === "success" ? (
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <div className="flex items-center justify-center h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 animate-pulse">
+                    <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground">Variation drafted</h4>
+                    <p className="text-xs text-muted-foreground">
+                      We&apos;ll add it to your list once the preview finishes rendering.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <label className="flex flex-col gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">Write a prompt</span>
+                    <textarea
+                      value={newVariationPrompt}
+                      onChange={(event) => setNewVariationPrompt(event.target.value)}
+                      disabled={creationState !== "idle"}
+                      placeholder="e.g. Show only the name, price and image. Reveal full details on hover."
+                      className="min-h-[120px] resize-none rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                    />
+                  </label>
+                  <div className="flex items-center justify-between">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {}}
+                      disabled={creationState !== "idle"}
+                    >
+                      Import from Figma
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={handleCloseCreateModal}
+                        disabled={creationState === "submitting"}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleConfirmCreate}
+                        disabled={creationState !== "idle" || newVariationPrompt.trim().length === 0}
+                      >
+                        {creationState === "submitting" ? (
+                          <span className="flex items-center gap-2">
+                            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                              />
+                            </svg>
+                            Creating…
+                          </span>
+                        ) : (
+                          "OK"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

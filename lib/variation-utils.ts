@@ -17,6 +17,9 @@ const VARIATION_PREVIEWS: Record<string, VariationPreview> = {
   award: { name: "Award Winner", content: "🏆 Best seller" },
   "expert-review": { name: "Expert Review", content: "Expert approved" },
   warranty: { name: "Warranty Highlight", content: "2-year warranty" },
+  "lifestyle-story": { name: "Lifestyle Story", content: "Narrative-first layout" },
+  "hover-float": { name: "Hover Float Card", content: "Lift on hover" },
+  "fast-buy": { name: "Fast Buy CTA", content: "Buy now ready" },
 }
 
 export function getVariationPreview(variationId: string): VariationPreview | null {
