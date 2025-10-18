@@ -21,6 +21,7 @@ interface ProductCardProps {
 export default function ProductCard({ product, isSelected, onSelect, previewVariationId }: ProductCardProps) {
   const variationPreview = previewVariationId ? getVariationPreview(previewVariationId) : null
 
+  console.log("Rendering ProductCard for product:", product.id, "with previewVariationId:", previewVariationId, variationPreview)
   if (variationPreview) {
     return (
       <VariationPreview
@@ -85,7 +86,7 @@ export default function ProductCard({ product, isSelected, onSelect, previewVari
         </span>
       </div>
 
-      {isSelected && (
+      {/* {isSelected && (
         <div className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full bg-primary shadow-sm">
           <svg className="h-4 w-4 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
             <path
@@ -95,7 +96,7 @@ export default function ProductCard({ product, isSelected, onSelect, previewVari
             />
           </svg>
         </div>
-      )}
+      )} */}
     </button>
   )
 }
