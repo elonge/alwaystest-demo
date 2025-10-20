@@ -331,7 +331,7 @@ export default function VariationPanel({
           onClick={handleAddToExperiment}
           disabled={selectedVariations.size === 0}
           size="lg"
-          className="w-full bg-[linear-gradient(135deg,color-mix(in_oklab,var(--color-always-primary)_88%,white_12%)_0%,color-mix(in_oklab,var(--color-always-primary)_65%,black_35%)_100%)] font-semibold text-always-primary-foreground shadow-lg shadow-[0_18px_40px_color-mix(in_oklab,var(--color-always-primary)_35%,transparent)] transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full text-lg bg-[linear-gradient(135deg,color-mix(in_oklab,var(--color-always-primary)_88%,white_12%)_0%,color-mix(in_oklab,var(--color-always-primary)_65%,black_35%)_100%)] font-semibold text-always-primary-foreground shadow-[0_18px_40px_color-mix(in_oklab,var(--color-always-primary)_35%,transparent)] transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
         >
           {`Continue with ${selectedVariations.size} variation${
             selectedVariations.size === 1 ? "" : "s"
