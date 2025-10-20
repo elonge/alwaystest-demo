@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
 import VariationCard from "./variation-card"
 import { Button } from "@/components/ui/button"
 
@@ -130,6 +130,25 @@ const BASE_VARIATIONS: Variation[] = [
 
 const DEFAULT_ALLOCATION = 1
 
+const variationPanelTheme = {
+  "--color-background": "rgba(8, 12, 26, 0.65)",
+  "--color-foreground": "#f8fafc",
+  "--color-card": "rgba(8, 12, 26, 0.55)",
+  "--color-card-foreground": "#f8fafc",
+  "--color-border": "rgba(255, 255, 255, 0.16)",
+  "--color-muted": "rgba(255, 255, 255, 0.14)",
+  "--color-muted-foreground": "rgba(226, 232, 240, 0.78)",
+  "--color-primary": "var(--color-always-primary)",
+  "--color-primary-foreground": "var(--color-always-primary-foreground)",
+  "--color-accent": "#4f39f6",
+  "--color-accent-foreground": "#f8fafc",
+  "--color-input": "rgba(6, 10, 24, 0.6)",
+  "--color-ring": "color-mix(in oklab, var(--color-always-primary) 65%, transparent)",
+  backgroundImage:
+    "linear-gradient(135deg, color-mix(in oklab, var(--color-always-primary) 88%, white 12%) 0%, color-mix(in oklab, var(--color-always-primary) 65%, black 35%) 100%)",
+  backgroundColor: "#0d1117",
+} as CSSProperties
+
 interface VariationPanelProps {
   onClose: () => void
   onSelectVariation: (variationId: string | null) => void
@@ -228,6 +247,14 @@ export default function VariationPanel({
       setCreationState("success")
       setVariations((previousVariations) => {
         const withoutFastBuy = previousVariations.filter((variation) => variation.id !== FAST_BUY_VARIATION.id)
+        // Scroll to the top of the panel
+        const panel = document.querySelector("[data-variation-panel]")
+        if (panel instanceof HTMLElement) {
+          const scrollContainer = panel.querySelector("[data-variation-scroll]")
+          if (scrollContainer instanceof HTMLElement) {
+            scrollContainer.scrollTop = 0
+          }
+        }
         return [FAST_BUY_VARIATION, ...withoutFastBuy]
       })
       onSelectVariation(FAST_BUY_VARIATION.id)
@@ -244,18 +271,27 @@ export default function VariationPanel({
   }, [])
 
   return (
-    <div className="flex flex-col h-full bg-card">
+    <div
+      data-variation-panel
+      className="flex h-full flex-col overflow-hidden text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]"
+      style={variationPanelTheme}
+    >
       {/* Header */}
-      <div className="border-b border-border p-4 flex items-center justify-between flex-shrink-0">
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-white/20 bg-white/10 p-4 backdrop-blur-sm">
         <div>
-          <h2 className="text-lg font-bold text-foreground">Variations</h2>
-          <p className="text-xs text-muted-foreground">Previewing updates every product in the grid</p>
+          <h2 className="text-lg font-bold text-white">Variations</h2>
+          <p className="text-xs uppercase tracking-wide text-white/70">Previewing updates every product in the grid</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleOpenCreateModal}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleOpenCreateModal}
+            className="border-white/30 bg-white/10 text-white transition-colors hover:border-white/40 hover:bg-white/20"
+          >
             Add variation
           </Button>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={onClose} className="text-white/60 transition-colors hover:text-white" aria-label="Close panel">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -263,11 +299,11 @@ export default function VariationPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div data-variation-scroll className="flex-1 overflow-y-auto p-4 backdrop-blur-sm">
         <div className="flex flex-col gap-3">
           {variations.length === 0 ? (
             <div className="text-center py-4">
-              <p className="text-muted-foreground">No variations available</p>
+              <p className="text-white/70">No variations available</p>
             </div>
           ) : (
             variations.map((variation) => (
@@ -290,8 +326,13 @@ export default function VariationPanel({
       </div>
 
       {/* Footer */}
-      <div className="border-t border-border p-4 flex items-center justify-between">
-        <Button onClick={handleAddToExperiment} disabled={selectedVariations.size === 0} size="lg" className="w-full font-semibold">
+      <div className="flex items-center justify-between border-t border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+        <Button
+          onClick={handleAddToExperiment}
+          disabled={selectedVariations.size === 0}
+          size="lg"
+          className="w-full bg-[linear-gradient(135deg,color-mix(in_oklab,var(--color-always-primary)_88%,white_12%)_0%,color-mix(in_oklab,var(--color-always-primary)_65%,black_35%)_100%)] font-semibold text-always-primary-foreground shadow-lg shadow-[0_18px_40px_color-mix(in_oklab,var(--color-always-primary)_35%,transparent)] transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+        >
           {`Continue with ${selectedVariations.size} variation${
             selectedVariations.size === 1 ? "" : "s"
           }`}
@@ -299,16 +340,16 @@ export default function VariationPanel({
       </div>
 
       {isCreateModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-lg border border-border bg-card shadow-lg">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur">
+          <div className="w-full max-w-md rounded-lg border border-white/20 bg-[rgba(9,13,30,0.85)] shadow-[0_25px_80px_rgba(15,20,44,0.6)]">
+            <div className="flex items-center justify-between border-b border-white/15 px-4 py-3">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Create a new variation</h3>
-                <p className="text-xs text-muted-foreground">Use AI or import your latest concept.</p>
+                <h3 className="text-sm font-semibold text-white">Create a new variation</h3>
+                <p className="text-xs text-white/70">Use AI or import your latest concept.</p>
               </div>
               <button
                 onClick={handleCloseCreateModal}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-white/60 transition-colors hover:text-white"
                 aria-label="Close create variation dialog"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,14 +360,14 @@ export default function VariationPanel({
             <div className="px-4 py-5">
               {creationState === "success" ? (
                 <div className="flex flex-col items-center gap-4 text-center">
-                  <div className="flex items-center justify-center h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 animate-pulse">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-[color:var(--color-always-primary)] ring-1 ring-white/20 animate-pulse">
                     <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-foreground">Variation drafted</h4>
-                    <p className="text-xs text-muted-foreground">
+                    <h4 className="text-sm font-medium text-white">Variation drafted</h4>
+                    <p className="text-xs text-white/70">
                       We&apos;ll add it to your list once the preview finishes rendering.
                     </p>
                   </div>
@@ -334,13 +375,13 @@ export default function VariationPanel({
               ) : (
                 <div className="space-y-4">
                   <label className="flex flex-col gap-2">
-                    <span className="text-xs font-medium text-muted-foreground">Write a prompt</span>
+                    <span className="text-xs font-medium uppercase tracking-wide text-white/70">Write a prompt</span>
                     <textarea
                       value={newVariationPrompt}
                       onChange={(event) => setNewVariationPrompt(event.target.value)}
                       disabled={creationState !== "idle"}
                       placeholder="e.g. Show only the name, price and image. Reveal full details on hover."
-                      className="min-h-[120px] resize-none rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                      className="min-h-[120px] resize-none rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-always-primary)] focus-visible:ring-opacity-40"
                     />
                   </label>
                   <div className="flex items-center justify-between">
@@ -349,6 +390,7 @@ export default function VariationPanel({
                       variant="outline"
                       onClick={() => {}}
                       disabled={creationState !== "idle"}
+                      className="border-white/25 bg-transparent text-white hover:border-white/40 hover:bg-white/10"
                     >
                       Import from Figma
                     </Button>
@@ -358,6 +400,7 @@ export default function VariationPanel({
                         variant="ghost"
                         onClick={handleCloseCreateModal}
                         disabled={creationState === "submitting"}
+                        className="text-white/70 hover:bg-white/10 hover:text-white"
                       >
                         Cancel
                       </Button>
@@ -365,10 +408,15 @@ export default function VariationPanel({
                         type="button"
                         onClick={handleConfirmCreate}
                         disabled={creationState !== "idle" || newVariationPrompt.trim().length === 0}
+                        className="bg-[linear-gradient(135deg,color-mix(in_oklab,var(--color-always-primary)_88%,white_12%)_0%,color-mix(in_oklab,var(--color-always-primary)_65%,black_35%)_100%)] text-always-primary-foreground shadow-lg shadow-[0_18px_40px_color-mix(in_oklab,var(--color-always-primary)_35%,transparent)] disabled:opacity-60"
                       >
                         {creationState === "submitting" ? (
                           <span className="flex items-center gap-2">
-                            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                            <svg
+                              className="h-4 w-4 animate-spin text-[color:var(--color-always-primary)]"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                            >
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                               <path
                                 className="opacity-75"

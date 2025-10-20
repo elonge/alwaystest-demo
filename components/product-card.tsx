@@ -1,6 +1,8 @@
 "use client"
+import { KeyboardEvent, MouseEvent } from "react"
 import { cn } from "@/lib/utils"
 import { getVariationPreview } from "@/lib/variation-utils"
+import { Button } from "@/components/ui/button"
 import VariationPreview from "./variation-preview"
 
 interface Product {
@@ -15,10 +17,17 @@ interface ProductCardProps {
   product: Product
   isSelected: boolean
   onSelect: () => void
+  onOpenVariations: () => void
   previewVariationId: string | null
 }
 
-export default function ProductCard({ product, isSelected, onSelect, previewVariationId }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  isSelected,
+  onSelect,
+  onOpenVariations,
+  previewVariationId,
+}: ProductCardProps) {
   const variationPreview = previewVariationId ? getVariationPreview(previewVariationId) : null
 
   console.log("Rendering ProductCard for product:", product.id, "with previewVariationId:", previewVariationId, variationPreview)
@@ -39,9 +48,24 @@ export default function ProductCard({ product, isSelected, onSelect, previewVari
     { name: "Accessories", ours: "Included bundle", theirs: "Sold separately" },
   ]
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      onSelect()
+    }
+  }
+
+  const handleOpenVariations = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    onOpenVariations()
+  }
+
   return (
-    <button
+    <div
       onClick={onSelect}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
       className={cn(
         "group relative overflow-hidden rounded-lg border-2 transition-all duration-300 text-left",
         isSelected
@@ -86,6 +110,18 @@ export default function ProductCard({ product, isSelected, onSelect, previewVari
         </span>
       </div>
 
+      {isSelected && (
+        <div className="absolute bottom-5 right-5 z-10">
+          <Button
+            size="lg"
+            className="cursor-pointer rounded-xl bg-[linear-gradient(135deg,_#00baa7_0%,_#4f39f6_100%)] px-6 py-10 text-2xl font-semibold text-white shadow-[0_18px_42px_rgba(79,57,246,0.35)] ring-8 ring-white/20 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_48px_rgba(79,57,246,0.45)] focus-visible:ring-white/40"
+            onClick={handleOpenVariations}
+          >
+            Generate variations
+          </Button>
+        </div>
+      )}
+
       {/* {isSelected && (
         <div className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full bg-primary shadow-sm">
           <svg className="h-4 w-4 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
@@ -97,6 +133,6 @@ export default function ProductCard({ product, isSelected, onSelect, previewVari
           </svg>
         </div>
       )} */}
-    </button>
+    </div>
   )
 }

@@ -57,14 +57,20 @@ const PRODUCTS: Product[] = [
 interface ProductGridProps {
   selectedProductId: string | null
   onSelectProduct: (id: string) => void
+  onOpenVariations: (id: string) => void
   previewVariationId: string | null
 }
 
-export default function ProductGrid({ selectedProductId, onSelectProduct, previewVariationId }: ProductGridProps) {
+export default function ProductGrid({
+  selectedProductId,
+  onSelectProduct,
+  onOpenVariations,
+  previewVariationId,
+}: ProductGridProps) {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Our Amazing Product Catalog</h1>
+        <h1 className="text-3xl font-bold text-primary mb-2">The Amazing Product Catalog Website</h1>
         {/* <p className="text-muted-foreground">
           {previewVariationId
             ? "Previewing variation across all products"
@@ -79,6 +85,7 @@ export default function ProductGrid({ selectedProductId, onSelectProduct, previe
             product={product}
             isSelected={selectedProductId === product.id}
             onSelect={() => onSelectProduct(product.id)}
+            onOpenVariations={() => onOpenVariations(product.id)}
             previewVariationId={previewVariationId}
           />
         ))}

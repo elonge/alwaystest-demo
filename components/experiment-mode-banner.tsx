@@ -18,7 +18,7 @@ export function ExperimentModeBanner() {
   return (
     <div
       aria-live="polite"
-      className={`fixed right-6 bottom-6 z-50 transform transition-all duration-700 ease-out ${
+      className={`fixed left-6 bottom-6 z-50 transform transition-all duration-700 ease-out ${
         isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
       }`}
     >

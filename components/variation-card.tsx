@@ -140,8 +140,8 @@ export default function VariationCard({
       ? "inline-flex items-center justify-center rounded-md border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors duration-200"
       : "inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-sm font-medium transition-colors duration-200",
     isPreview
-      ? "border-primary bg-primary/10 text-primary"
-      : "border-border bg-background text-primary hover:border-primary hover:bg-primary/10",
+      ? "border-always-primary  text-always-primary shadow-sm"
+      : "border-border bg-background text-always-primary hover:border-always-primary hover:bg-always-primary/10",
   )
 
   const toggleButtonClassName = cn(
@@ -149,8 +149,8 @@ export default function VariationCard({
       ? "inline-flex items-center justify-center rounded-md border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors duration-200"
       : "inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-sm font-medium transition-colors duration-200",
     isSelected
-      ? "border-primary bg-primary text-primary-foreground shadow-sm"
-      : "border-border bg-background text-primary hover:border-primary hover:bg-primary/10",
+      ? "border-always-primary  text-always-primary shadow-sm"
+      : "border-border bg-background text-always-primary hover:border-always-primary hover:bg-always-primary/10",
   )
 
   const Popup = () => {
@@ -192,7 +192,7 @@ export default function VariationCard({
               onPointerDown={handlePointerDown}
               onClick={handleInputClick}
               onFocus={handleInputFocus}
-              className="h-9 w-24 rounded border border-border bg-background px-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-9 w-24 rounded border border-border bg-background px-2 text-sm focus:border-always-primary focus:outline-none focus:ring-2 focus:ring-always-primary/30"
               aria-label="Percent of users seeing this variation"
               placeholder={fallbackAllocation.toString()}
             />
@@ -210,10 +210,10 @@ export default function VariationCard({
         className={cn(
           "relative flex-shrink-0 w-48 cursor-pointer rounded-lg border-2 p-3 text-left transition-all duration-200",
           isPreview
-            ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+            ? "border-always-primary bg-[color-mix(in_oklab,var(--color-always-primary)_22%,var(--color-background))] ring-2 ring-always-primary/30"
             : isSelected
-              ? "border-primary/60 bg-primary/5 hover:border-primary/40"
-              : "border-border bg-background hover:border-primary/30",
+              ? "border-always-primary/60 bg-[color-mix(in_oklab,var(--color-background)_90%,var(--color-always-primary)_10%)] hover:border-always-primary/40"
+              : "border-border bg-background hover:border-always-primary/30",
         )}
       >
         <div className="mb-2 flex items-center justify-between gap-2">
@@ -226,7 +226,7 @@ export default function VariationCard({
         </div>
 
         {isSelected && (
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-primary">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-always-primary">
             In test • {allocationSummary}
           </p>
         )}
@@ -257,10 +257,10 @@ export default function VariationCard({
       className={cn(
         "relative w-full cursor-pointer rounded-lg border-2 p-4 text-left transition-all duration-200",
         isPreview
-          ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+          ? "border-always-primary bg-green-100 ring-2 ring-always-primary/30"
           : isSelected
-            ? "border-primary/60 bg-primary/20 hover:border-primary/40"
-            : "border-border bg-background hover:border-primary/30",
+            ? "border-always-primary/60 bg-green-300 hover:border-always-primary/40"
+            : "border-border bg-background hover:border-always-primary/30",
       )}
     >
       <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/50 pb-3">
@@ -281,9 +281,9 @@ export default function VariationCard({
         </div>
 
         {isSelected && (
-          <div className="flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-sm font-medium text-primary">
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-always-primary/40 bg-green-300/30 px-4">
             <span>In test</span>
-            <span className="text-primary/80">•</span>
+            <span className="text-always-primary/80">•</span>
             <span>{allocationSummary}</span>
           </div>
         )}
@@ -293,7 +293,7 @@ export default function VariationCard({
         <div className="space-y-1">
           {variation.changes.map((change, idx) => (
             <div key={idx} className="flex items-center gap-2">
-              <span className="text-primary">•</span>
+              <span className="text-always-primary">•</span>
               <span className="text-xs text-muted-foreground">{change}</span>
             </div>
           ))}
