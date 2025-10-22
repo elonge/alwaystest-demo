@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState, type CSSProperties } from "react"
+import Link from "next/link"
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import VariationCard from "./variation-card"
 import { Button } from "@/components/ui/button"
 
@@ -155,11 +156,7 @@ interface VariationPanelProps {
   previewVariationId: string | null
 }
 
-export default function VariationPanel({
-  onClose,
-  onSelectVariation,
-  previewVariationId,
-}: VariationPanelProps) {
+export default function VariationPanel({ onClose, onSelectVariation, previewVariationId }: VariationPanelProps) {
   const [variations, setVariations] = useState<Variation[]>(BASE_VARIATIONS)
   const [selectedVariations, setSelectedVariations] = useState<Set<string>>(new Set())
   const [allocationByVariation, setAllocationByVariation] = useState<Record<string, number>>({})
@@ -168,6 +165,9 @@ export default function VariationPanel({
   const [creationState, setCreationState] = useState<"idle" | "submitting" | "success">("idle")
   const creationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [continueState, setContinueState] = useState<"idle" | "generating" | "ready">("idle")
+  const [generatedPrUrl, setGeneratedPrUrl] = useState<string | null>(null)
+  const continueTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const experimentName = "Homepage Layout Test"
 
   const toggleVariation = (variationId: string) => {
@@ -202,9 +202,21 @@ export default function VariationPanel({
       alert("Please select at least one variation")
       return
     }
-    alert(`Added ${selectedVariations.size} variation(s) to experiment`)
+    clearContinueTimer()
+    onSelectVariation(null)
+    setContinueState("generating")
+    setGeneratedPrUrl(null)
     setSelectedVariations(new Set())
     setAllocationByVariation({})
+    if (isCreateModalOpen) {
+      clearCreationTimers()
+      resetCreateModal()
+    }
+    continueTimeoutRef.current = setTimeout(() => {
+      setContinueState("ready")
+      setGeneratedPrUrl("https://github.com/acme-labs/storefront/pull/482")
+      continueTimeoutRef.current = null
+    }, 7000)
   }
 
   const handleOpenCreateModal = () => {
@@ -229,6 +241,13 @@ export default function VariationPanel({
     if (successTimeoutRef.current) {
       clearTimeout(successTimeoutRef.current)
       successTimeoutRef.current = null
+    }
+  }
+
+  const clearContinueTimer = () => {
+    if (continueTimeoutRef.current) {
+      clearTimeout(continueTimeoutRef.current)
+      continueTimeoutRef.current = null
     }
   }
 
@@ -267,6 +286,7 @@ export default function VariationPanel({
   useEffect(() => {
     return () => {
       clearCreationTimers()
+      clearContinueTimer()
     }
   }, [])
 
@@ -276,168 +296,315 @@ export default function VariationPanel({
       className="flex h-full flex-col overflow-hidden text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]"
       style={variationPanelTheme}
     >
-      {/* Header */}
-      <div className="flex flex-shrink-0 items-center justify-between border-b border-white/20 bg-white/10 p-4 backdrop-blur-sm">
-        <div>
-          <h2 className="text-lg font-bold text-white">Variations</h2>
-          <p className="text-xs uppercase tracking-wide text-white/70">Previewing updates every product in the grid</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleOpenCreateModal}
-            className="border-white/30 bg-white/10 text-white transition-colors hover:border-white/40 hover:bg-white/20"
-          >
-            Add variation
-          </Button>
-          <button onClick={onClose} className="text-white/60 transition-colors hover:text-white" aria-label="Close panel">
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div data-variation-scroll className="flex-1 overflow-y-auto p-4 backdrop-blur-sm">
-        <div className="flex flex-col gap-3">
-          {variations.length === 0 ? (
-            <div className="text-center py-4">
-              <p className="text-white/70">No variations available</p>
+      {continueState === "idle" ? (
+        <>
+          {/* Header */}
+          <div className="flex flex-shrink-0 items-center justify-between border-b border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+            <div>
+              <h2 className="text-lg font-bold text-white">Variations</h2>
+              {/* <p className="text-xs uppercase tracking-wide text-white/70">
+                Previewing updates every product in the grid
+              </p> */}
             </div>
-          ) : (
-            variations.map((variation) => (
-              <VariationCard
-                key={variation.id}
-                variation={variation}
-                isSelected={selectedVariations.has(variation.id)}
-                isPreview={previewVariationId === variation.id}
-                onToggle={() => toggleVariation(variation.id)}
-                onPreview={() => onSelectVariation(previewVariationId === variation.id ? null : variation.id)}
-                compact={false}
-                testName={experimentName}
-                defaultAllocation={DEFAULT_ALLOCATION}
-                allocation={allocationByVariation[variation.id] ?? DEFAULT_ALLOCATION}
-                onAllocationChange={(value) => handleAllocationChange(variation.id, value)}
-              />
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between border-t border-white/20 bg-white/10 p-4 backdrop-blur-sm">
-        <Button
-          onClick={handleAddToExperiment}
-          disabled={selectedVariations.size === 0}
-          size="lg"
-          className="w-full text-lg bg-[linear-gradient(135deg,color-mix(in_oklab,var(--color-always-primary)_88%,white_12%)_0%,color-mix(in_oklab,var(--color-always-primary)_65%,black_35%)_100%)] font-semibold text-always-primary-foreground shadow-[0_18px_40px_color-mix(in_oklab,var(--color-always-primary)_35%,transparent)] transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {`Continue with ${selectedVariations.size} variation${
-            selectedVariations.size === 1 ? "" : "s"
-          }`}
-        </Button>
-      </div>
-
-      {isCreateModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur">
-          <div className="w-full max-w-md rounded-lg border border-white/20 bg-[rgba(9,13,30,0.85)] shadow-[0_25px_80px_rgba(15,20,44,0.6)]">
-            <div className="flex items-center justify-between border-b border-white/15 px-4 py-3">
-              <div>
-                <h3 className="text-sm font-semibold text-white">Create a new variation</h3>
-                <p className="text-xs text-white/70">Use AI or import your latest concept.</p>
-              </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenCreateModal}
+                className="border-white/30 bg-white/10 text-white transition-colors hover:border-white/40 hover:bg-white/20"
+              >
+                Add variation
+              </Button>
               <button
-                onClick={handleCloseCreateModal}
+                onClick={onClose}
                 className="text-white/60 transition-colors hover:text-white"
-                aria-label="Close create variation dialog"
+                aria-label="Close panel"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="px-4 py-5">
-              {creationState === "success" ? (
-                <div className="flex flex-col items-center gap-4 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-[color:var(--color-always-primary)] ring-1 ring-white/20 animate-pulse">
-                    <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-white">Variation drafted</h4>
-                    <p className="text-xs text-white/70">
-                      We&apos;ll add it to your list once the preview finishes rendering.
-                    </p>
-                  </div>
+          </div>
+
+          <div data-variation-scroll className="flex-1 overflow-y-auto p-4 backdrop-blur-sm">
+            <div className="flex flex-col gap-3">
+              {variations.length === 0 ? (
+                <div className="py-4 text-center">
+                  <p className="text-white/70">No variations available</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <label className="flex flex-col gap-2">
-                    <span className="text-xs font-medium uppercase tracking-wide text-white/70">Write a prompt</span>
-                    <textarea
-                      value={newVariationPrompt}
-                      onChange={(event) => setNewVariationPrompt(event.target.value)}
-                      disabled={creationState !== "idle"}
-                      placeholder="e.g. Show only the name, price and image. Reveal full details on hover."
-                      className="min-h-[120px] resize-none rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-always-primary)] focus-visible:ring-opacity-40"
-                    />
-                  </label>
-                  <div className="flex items-center justify-between">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {}}
-                      disabled={creationState !== "idle"}
-                      className="border-white/25 bg-transparent text-white hover:border-white/40 hover:bg-white/10"
-                    >
-                      Import from Figma
-                    </Button>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={handleCloseCreateModal}
-                        disabled={creationState === "submitting"}
-                        className="text-white/70 hover:bg-white/10 hover:text-white"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={handleConfirmCreate}
-                        disabled={creationState !== "idle" || newVariationPrompt.trim().length === 0}
-                        className="bg-[linear-gradient(135deg,color-mix(in_oklab,var(--color-always-primary)_88%,white_12%)_0%,color-mix(in_oklab,var(--color-always-primary)_65%,black_35%)_100%)] text-always-primary-foreground shadow-lg shadow-[0_18px_40px_color-mix(in_oklab,var(--color-always-primary)_35%,transparent)] disabled:opacity-60"
-                      >
-                        {creationState === "submitting" ? (
-                          <span className="flex items-center gap-2">
-                            <svg
-                              className="h-4 w-4 animate-spin text-[color:var(--color-always-primary)]"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                            >
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                              />
-                            </svg>
-                            Creating…
-                          </span>
-                        ) : (
-                          "OK"
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                variations.map((variation) => (
+                  <VariationCard
+                    key={variation.id}
+                    variation={variation}
+                    isSelected={selectedVariations.has(variation.id)}
+                    isPreview={previewVariationId === variation.id}
+                    onToggle={() => toggleVariation(variation.id)}
+                    onPreview={() => onSelectVariation(previewVariationId === variation.id ? null : variation.id)}
+                    compact={false}
+                    testName={experimentName}
+                    defaultAllocation={DEFAULT_ALLOCATION}
+                    allocation={allocationByVariation[variation.id] ?? DEFAULT_ALLOCATION}
+                    onAllocationChange={(value) => handleAllocationChange(variation.id, value)}
+                  />
+                ))
               )}
             </div>
           </div>
-        </div>
-      ) : null}
+
+          {/* Footer */}
+          <div className="flex items-center justify-between border-t border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+            <Button
+              onClick={handleAddToExperiment}
+              disabled={selectedVariations.size === 0}
+              size="lg"
+              className="w-full bg-[linear-gradient(135deg,color-mix(in_oklab,var(--color-always-primary)_88%,white_12%)_0%,color-mix(in_oklab,var(--color-always-primary)_65%,black_35%)_100%)] text-lg font-semibold text-always-primary-foreground shadow-[0_18px_40px_color-mix(in_oklab,var(--color-always-primary)_35%,transparent)] transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {`Continue with ${selectedVariations.size} variation${
+                selectedVariations.size === 1 ? "" : "s"
+              }`}
+            </Button>
+          </div>
+
+          {isCreateModalOpen ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white shadow-[0_40px_100px_rgba(15,23,42,0.28)]">
+                <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900">Create a new variation</h3>
+                    <p className="text-sm text-slate-500">Use AI or import your latest concept.</p>
+                  </div>
+                  <button
+                    onClick={handleCloseCreateModal}
+                    className="text-slate-400 transition-colors hover:text-slate-600"
+                    aria-label="Close create variation dialog"
+                  >
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="px-6 py-7">
+                  {creationState === "success" ? (
+                    <div className="flex flex-col items-center gap-5 text-center">
+                      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-sky-100 text-[color:var(--color-always-primary)] ring-2 ring-sky-200 animate-pulse">
+                        <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-slate-900">Variation drafted</h4>
+                        <p className="text-sm text-slate-500">
+                          We&apos;ll add it to your list once the preview finishes rendering.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <label className="flex flex-col gap-2">
+                        <span className="text-lg font-semibold uppercase tracking-wide text-slate-500">
+                          Write a prompt
+                        </span>
+                        <textarea
+                          value={newVariationPrompt}
+                          onChange={(event) => setNewVariationPrompt(event.target.value)}
+                          disabled={creationState !== "idle"}
+                          placeholder="e.g. Show only the name, price and image. Reveal full details on hover."
+                          className="min-h-[140px] resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-lg text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:border-[color:var(--color-always-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-always-primary)]/30 disabled:opacity-60"
+                        />
+                      </label>
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {}}
+                          disabled={creationState !== "idle"}
+                          className="border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-100"
+                        >
+                          Import from Figma
+                        </Button>
+                        <div className="flex items-center justify-end gap-3">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={handleCloseCreateModal}
+                            disabled={creationState === "submitting"}
+                            className="text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={handleConfirmCreate}
+                            disabled={creationState !== "idle" || newVariationPrompt.trim().length === 0}
+                            className="bg-[linear-gradient(135deg,color-mix(in_oklab,var(--color-always-primary)_88%,white_12%)_0%,color-mix(in_oklab,var(--color-always-primary)_65%,black_30%)_100%)] px-6 py-6 text-lg font-semibold text-always-primary-foreground shadow-lg shadow-[0_22px_45px_color-mix(in_oklab,var(--color-always-primary)_35%,transparent)] disabled:opacity-60"
+                          >
+                            {creationState === "submitting" ? (
+                              <span className="flex items-center gap-3 text-base">
+                                <svg
+                                  className="h-5 w-5 animate-spin text-[color:var(--color-always-primary)]"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                  />
+                                </svg>
+                                Creating…
+                              </span>
+                            ) : (
+                              "OK"
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <ContinueStateContent
+          state={continueState}
+          prUrl={generatedPrUrl}
+          onClose={onClose}
+          onRetry={() => {
+            clearContinueTimer()
+            setContinueState("idle")
+            setGeneratedPrUrl(null)
+          }}
+        />
+      )}
     </div>
+  )
+}
+
+function ContinueStateContent({
+  state,
+  prUrl,
+  onClose,
+  onRetry,
+}: {
+  state: "generating" | "ready"
+  prUrl: string | null
+  onClose: () => void
+  onRetry: () => void
+}) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-8 p-8 text-center">
+      <div className="flex w-full items-center justify-between text-white/70">
+        <span className="text-xs uppercase tracking-[0.2em]">Experiment Automations</span>
+        <button onClick={onClose} className="text-white/60 transition-colors hover:text-white" aria-label="Close panel">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div className="relative flex h-32 w-32 items-center justify-center">
+        <span
+          className={`absolute h-full w-full rounded-full border-2 border-white/15 border-t-white/60 ${
+            state === "generating" ? "animate-spin" : ""
+          }`}
+        />
+        <span
+          className={`absolute h-full w-full rounded-full border-2 border-transparent border-b-white/40 ${
+            state === "generating" ? "animate-[spin_8s_linear_infinite]" : ""
+          }`}
+        />
+        <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-white shadow-[0_20px_40px_rgba(0,0,0,0.35)]">
+          {state === "generating" ? (
+            <svg className="h-9 w-9 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.6}
+                d="M12 5v14m7-7H5"
+              />
+            </svg>
+          ) : (
+            <svg className="h-9 w-9 text-[color:var(--color-always-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+          {state === "generating" ? (
+            <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(79,57,246,0.35)_0%,transparent_65%)] animate-ping" />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {state === "generating" ? (
+          <>
+            <h2 className="text-2xl font-semibold text-white">Packaging your pull request…</h2>
+            <p className="text-sm text-white/70">
+              Branching from your selected variations and wiring up experiment metrics. This usually takes a few
+              seconds.
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-2xl font-semibold text-white">Your Pull request is ready.</h2>
+            <p className="text-sm text-white/70">
+              Review the generated changes and merge when you&apos;re happy with the experiment setup.
+            </p>
+          </>
+        )}
+      </div>
+
+      <div className="flex items-center justify-center gap-2 text-white/70">
+        {[0, 1, 2].map((index) => (
+          <span
+            key={index}
+            className={`h-2.5 w-2.5 rounded-full bg-white/50 ${
+              state === "generating" ? "animate-bounce" : ""
+            }`}
+            style={state === "generating" ? { animationDelay: `${index * 0.2}s` } : undefined}
+          />
+        ))}
+      </div>
+
+      {state === "ready" ? (
+        <div className="flex flex-col items-center gap-4">
+          {prUrl ? (
+            <ButtonLink href={prUrl}>View pull request</ButtonLink>
+          ) : null}
+          <button
+            onClick={onRetry}
+            className="text-sm font-medium text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline"
+            type="button"
+          >
+            Generate again
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs uppercase tracking-[0.4em] text-white/40">Syncing branch, running checks</p>
+      )}
+    </div>
+  )
+}
+
+function ButtonLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Button
+      asChild
+      className="bg-[linear-gradient(135deg,color-mix(in_oklab,var(--color-always-primary)_88%,white_12%)_0%,color-mix(in_oklab,var(--color-always-primary)_65%,black_35%)_100%)] px-6 text-always-primary-foreground shadow-[0_18px_40px_color-mix(in_oklab,var(--color-always-primary)_35%,transparent)]"
+    >
+      <Link href={href} target="_blank" rel="noreferrer">
+        {children}
+      </Link>
+    </Button>
   )
 }

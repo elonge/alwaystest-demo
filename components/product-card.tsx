@@ -30,7 +30,6 @@ export default function ProductCard({
 }: ProductCardProps) {
   const variationPreview = previewVariationId ? getVariationPreview(previewVariationId) : null
 
-  console.log("Rendering ProductCard for product:", product.id, "with previewVariationId:", previewVariationId, variationPreview)
   if (variationPreview) {
     return (
       <VariationPreview

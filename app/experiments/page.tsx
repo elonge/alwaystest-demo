@@ -1,117 +1,7 @@
+import Link from "next/link"
+
 import { ExperimentModeBanner } from "@/components/experiment-mode-banner"
-
-type VariantResult = {
-  name: string
-  conversionRate: number
-  sampleSize: number
-  uplift?: number
-  significance?: number
-}
-
-type Experiment = {
-  id: string
-  name: string
-  status: "Running" | "Completed" | "Planning"
-  startDate: string
-  durationDays: number
-  hypothesis: string
-  control: VariantResult
-  variants: VariantResult[]
-  primaryMetric: string
-  secondaryMetric: string
-}
-
-const experiments: Experiment[] = [
-  {
-    id: "EXP-204",
-    name: "Homepage CTA hero treatment",
-    status: "Running",
-    startDate: "Sep 9, 2024",
-    durationDays: 14,
-    hypothesis: "Surfacing the hero CTA above the fold increases sign-up intent.",
-    primaryMetric: "Signup conversion rate",
-    secondaryMetric: "Activation rate (day 7)",
-    control: {
-      name: "Control",
-      conversionRate: 4.7,
-      sampleSize: 1382,
-    },
-    variants: [
-      {
-        name: "Variant A — Gradient CTA",
-        conversionRate: 5.9,
-        uplift: 0.255,
-        significance: 88,
-        sampleSize: 1390,
-      },
-      {
-        name: "Variant B — Split layout",
-        conversionRate: 5.1,
-        uplift: 0.085,
-        significance: 52,
-        sampleSize: 1374,
-      },
-    ],
-  },
-  {
-    id: "EXP-198",
-    name: "Pricing page comparison table",
-    status: "Completed",
-    startDate: "Aug 26, 2024",
-    durationDays: 21,
-    hypothesis: "Adding toggles for annual discounts encourages plan upgrades.",
-    primaryMetric: "Plan upgrade rate",
-    secondaryMetric: "Average contract value",
-    control: {
-      name: "Control",
-      conversionRate: 8.2,
-      sampleSize: 2145,
-    },
-    variants: [
-      {
-        name: "Variant A — Toggle placement",
-        conversionRate: 9.1,
-        uplift: 0.11,
-        significance: 95,
-        sampleSize: 2163,
-      },
-      {
-        name: "Variant B — Feature callouts",
-        conversionRate: 7.6,
-        uplift: -0.073,
-        significance: 34,
-        sampleSize: 2159,
-      },
-    ],
-  },
-  {
-    id: "EXP-210",
-    name: "Onboarding checklist sequence",
-    status: "Planning",
-    startDate: "Sep 23, 2024",
-    durationDays: 28,
-    hypothesis: "Sequencing checklist tasks reduces early churn.",
-    primaryMetric: "Day 14 retention",
-    secondaryMetric: "Feature adoption depth",
-    control: {
-      name: "Control",
-      conversionRate: 36.2,
-      sampleSize: 980,
-    },
-    variants: [
-      {
-        name: "Variant A — Guided tour",
-        conversionRate: 0,
-        sampleSize: 0,
-      },
-      {
-        name: "Variant B — Cohort nudges",
-        conversionRate: 0,
-        sampleSize: 0,
-      },
-    ],
-  },
-]
+import { experiments, type Experiment, type VariantResult } from "@/lib/experiments-data"
 
 const brandGradient = "linear-gradient(135deg, #00baa7 0%, #4f39f6 100%)"
 
@@ -247,7 +137,12 @@ export default function ExperimentsDashboard() {
 
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground">{experiment.name}</h3>
+                      <Link
+                        href={`/experiments/${experiment.id}`}
+                        className="text-lg font-semibold text-foreground transition-colors hover:text-always-primary"
+                      >
+                        {experiment.name}
+                      </Link>
                       <p className="text-sm text-muted-foreground">{experiment.hypothesis}</p>
                     </div>
 
@@ -264,7 +159,18 @@ export default function ExperimentsDashboard() {
                     <MetricLine label="Secondary metric" value={experiment.secondaryMetric} />
                   </div>
 
-                  <VariantBreakdown experiment={experiment} />
+                  <div className="flex flex-col gap-6">
+                    <VariantBreakdown experiment={experiment} />
+                    <Link
+                      href={`/experiments/${experiment.id}`}
+                      className="inline-flex w-fit items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:border-always-primary hover:text-always-primary"
+                    >
+                      View details
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9l3 3-3 3m3-3H9" />
+                      </svg>
+                    </Link>
+                  </div>
                 </article>
               ))}
             </div>
