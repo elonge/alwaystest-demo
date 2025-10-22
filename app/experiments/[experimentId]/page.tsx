@@ -4,9 +4,7 @@ import { notFound } from "next/navigation"
 import { experiments, getExperimentById, type VariantResult } from "@/lib/experiments-data"
 
 type ExperimentPageProps = {
-  params: {
-    experimentId: string
-  }
+  params: Promise<{ experimentId: string }>
 }
 
 const brandGradient = "linear-gradient(135deg, #00baa7 0%, #4f39f6 100%)"
@@ -17,8 +15,10 @@ export function generateStaticParams() {
   }))
 }
 
-export default function ExperimentPage({ params }: ExperimentPageProps) {
-  const decodedId = decodeURIComponent(params.experimentId)
+export default async function ExperimentPage({ params }: ExperimentPageProps) {
+  const { experimentId } = await params
+
+  const decodedId = decodeURIComponent(experimentId)
   const experiment = getExperimentById(decodedId)
 
   if (!experiment) {
