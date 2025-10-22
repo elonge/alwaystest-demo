@@ -1,6 +1,9 @@
 "use client"
-import { ChangeEvent, useMemo, useState } from "react"
+
+import { useMemo, useState } from "react"
 import ProductCard from "./product-card"
+import { ShopHeader } from "./shop-header"
+import { FilterSidebar } from "./filter-sidebar"
 
 interface Product {
   id: string
@@ -8,6 +11,11 @@ interface Product {
   price: number
   image: string
   category: string
+  brand: string
+  rating: number
+  discount: number
+  primeExclusive: boolean
+  primeEarlyAccess: boolean
 }
 
 const PRODUCTS: Product[] = [
@@ -17,6 +25,11 @@ const PRODUCTS: Product[] = [
     price: 299,
     image: "/premium-headphones.png",
     category: "Audio",
+    brand: "SoundSphere",
+    rating: 4.6,
+    discount: 25,
+    primeExclusive: true,
+    primeEarlyAccess: false,
   },
   {
     id: "2",
@@ -24,6 +37,11 @@ const PRODUCTS: Product[] = [
     price: 149,
     image: "/wireless-earbuds.png",
     category: "Audio",
+    brand: "PulseAudio",
+    rating: 4.2,
+    discount: 15,
+    primeExclusive: false,
+    primeEarlyAccess: true,
   },
   {
     id: "3",
@@ -31,6 +49,11 @@ const PRODUCTS: Product[] = [
     price: 399,
     image: "/smartwatch-lifestyle.png",
     category: "Wearables",
+    brand: "Orbit Labs",
+    rating: 4.7,
+    discount: 18,
+    primeExclusive: true,
+    primeEarlyAccess: true,
   },
   {
     id: "4",
@@ -38,6 +61,11 @@ const PRODUCTS: Product[] = [
     price: 199,
     image: "/portable-speaker.png",
     category: "Audio",
+    brand: "EchoPulse",
+    rating: 4.4,
+    discount: 30,
+    primeExclusive: false,
+    primeEarlyAccess: false,
   },
   {
     id: "5",
@@ -45,6 +73,11 @@ const PRODUCTS: Product[] = [
     price: 49,
     image: "/phone-stand.jpg",
     category: "Accessories",
+    brand: "DeskNest",
+    rating: 4,
+    discount: 12,
+    primeExclusive: false,
+    primeEarlyAccess: false,
   },
   {
     id: "6",
@@ -52,6 +85,11 @@ const PRODUCTS: Product[] = [
     price: 29,
     image: "/usb-c-cable.jpg",
     category: "Cables",
+    brand: "ChargeCraft",
+    rating: 3.8,
+    discount: 10,
+    primeExclusive: false,
+    primeEarlyAccess: false,
   },
 ]
 
@@ -62,6 +100,9 @@ interface ProductGridProps {
   previewVariationId: string | null
 }
 
+const PRICE_LIMITS = { min: 0, max: 500 }
+const DISCOUNT_LIMITS = { min: 0, max: 90 }
+
 export default function ProductGrid({
   selectedProductId,
   onSelectProduct,
@@ -70,210 +111,215 @@ export default function ProductGrid({
 }: ProductGridProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
-  const [priceFilter, setPriceFilter] = useState<string>("all")
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([])
+  const [ratingFilter, setRatingFilter] = useState<string>("all")
+  const [priceRange, setPriceRange] = useState<[number, number]>([100, 400])
+  const [discountRange, setDiscountRange] = useState<[number, number]>([10, 40])
+  const [primePrograms, setPrimePrograms] = useState<string[]>([])
   const [sortOption, setSortOption] = useState<string>("featured")
 
-  const categories = useMemo(() => Array.from(new Set(PRODUCTS.map((product) => product.category))), [])
+  const categories = useMemo(
+    () => Array.from(new Set(PRODUCTS.map((product) => product.category))),
+    [],
+  )
+
+  const brands = useMemo(
+    () => Array.from(new Set(PRODUCTS.map((product) => product.brand))).sort(),
+    [],
+  )
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase()
 
-    const priceMatches = (price: number) => {
-      switch (priceFilter) {
-        case "under-100":
-          return price < 100
-        case "100-250":
-          return price >= 100 && price <= 250
-        case "above-250":
-          return price > 250
-        default:
-          return true
-      }
-    }
-
-    const baseFiltered = PRODUCTS.filter((product) => {
+    return PRODUCTS.filter((product) => {
       const matchesSearch =
         normalizedSearch.length === 0 ||
         product.name.toLowerCase().includes(normalizedSearch) ||
-        product.category.toLowerCase().includes(normalizedSearch)
+        product.category.toLowerCase().includes(normalizedSearch) ||
+        product.brand.toLowerCase().includes(normalizedSearch)
 
       const matchesCategory = selectedCategory === "all" || product.category === selectedCategory
+      const matchesBrands =
+        selectedBrands.length === 0 || selectedBrands.includes(product.brand)
 
-      return matchesSearch && matchesCategory && priceMatches(product.price)
-    })
+      const matchesRating =
+        ratingFilter === "all" || product.rating >= Number(ratingFilter)
 
-    const sorted = [...baseFiltered]
-    sorted.sort((a, b) => {
+      const matchesPrice =
+        product.price >= priceRange[0] && product.price <= priceRange[1]
+
+      const matchesDiscount =
+        product.discount >= discountRange[0] && product.discount <= discountRange[1]
+
+      const matchesPrime =
+        primePrograms.length === 0 ||
+        primePrograms.every((program) =>
+          program === "prime-exclusive" ? product.primeExclusive : product.primeEarlyAccess,
+        )
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesBrands &&
+        matchesRating &&
+        matchesPrice &&
+        matchesDiscount &&
+        matchesPrime
+      )
+    }).sort((a, b) => {
       switch (sortOption) {
         case "price-low-high":
           return a.price - b.price
         case "price-high-low":
           return b.price - a.price
+        case "rating":
+          return b.rating - a.rating
         default:
           return Number(a.id) - Number(b.id)
       }
     })
+  }, [
+    discountRange,
+    priceRange,
+    primePrograms,
+    ratingFilter,
+    searchTerm,
+    selectedBrands,
+    selectedCategory,
+    sortOption,
+  ])
 
-    return sorted
-  }, [priceFilter, searchTerm, selectedCategory, sortOption])
+  const handleBrandToggle = (brand: string) => {
+    setSelectedBrands((prev) =>
+      prev.includes(brand) ? prev.filter((item) => item !== brand) : [...prev, brand],
+    )
+  }
 
-  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value)
+  const handlePrimeToggle = (program: string) => {
+    setPrimePrograms((prev) =>
+      prev.includes(program) ? prev.filter((item) => item !== program) : [...prev, program],
+    )
+  }
+
+  const handlePriceRangeChange = (type: "min" | "max", value: number) => {
+    setPriceRange(([currentMin, currentMax]) => {
+      if (type === "min") {
+        const nextMin = Math.max(PRICE_LIMITS.min, Math.min(value, currentMax - 10))
+        return [nextMin, currentMax]
+      }
+      const nextMax = Math.min(PRICE_LIMITS.max, Math.max(value, currentMin + 10))
+      return [currentMin, nextMax]
+    })
+  }
+
+  const handleDiscountRangeChange = (type: "min" | "max", value: number) => {
+    setDiscountRange(([currentMin, currentMax]) => {
+      if (type === "min") {
+        const nextMin = Math.max(DISCOUNT_LIMITS.min, Math.min(value, currentMax - 5))
+        return [nextMin, currentMax]
+      }
+      const nextMax = Math.min(DISCOUNT_LIMITS.max, Math.max(value, currentMin + 5))
+      return [currentMin, nextMax]
+    })
   }
 
   return (
-    <div className="space-y-8 p-8">
-      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-8 py-10">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-4xl space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Curated for Conversion</p>
-            <h1 className="text-4xl font-bold text-foreground">
-              The Amazing Product Catalog Website
-            </h1>
-            <p className="text-base text-muted-foreground">
-              A modern catalog experience that showcases high-impact components alongside data-backed comparisons.
-              Filter, sort, and explore to find the perfect addition to your storefront.
-            </p>
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <div className="rounded-full border border-border/70 bg-background/60 px-4 py-1">
-                Built for growth teams
+    <div className="flex h-full flex-col bg-background">
+      <ShopHeader searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+      <div className="flex flex-1 overflow-hidden">
+        <FilterSidebar
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          brands={brands}
+          selectedBrands={selectedBrands}
+          onToggleBrand={handleBrandToggle}
+          ratingFilter={ratingFilter}
+          onRatingChange={setRatingFilter}
+          priceRange={priceRange}
+          priceLimits={PRICE_LIMITS}
+          onPriceRangeChange={handlePriceRangeChange}
+          discountRange={discountRange}
+          discountLimits={DISCOUNT_LIMITS}
+          onDiscountRangeChange={handleDiscountRangeChange}
+          selectedPrimePrograms={primePrograms}
+          onTogglePrimeProgram={handlePrimeToggle}
+        />
+
+        <div className="flex-1 overflow-y-auto bg-background">
+          <div className="space-y-8 px-6 py-8">
+            <div className="rounded-2xl border border-border bg-card/80 px-6 py-5 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-6">
+                <div className="max-w-2xl space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                    Conversion Lab
+                  </p>
+                  <h1 className="text-2xl font-semibold text-foreground">
+                    Curated experiences from ShopSample.io partners
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Explore ready-to-test components with performance data, premium creative, and
+                    variation ideas tailored for modern storefronts.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border bg-background px-5 py-3 text-sm text-muted-foreground">
+                  Showing{" "}
+                  <span className="font-semibold text-foreground">
+                    {filteredProducts.length}
+                  </span>{" "}
+                  of {PRODUCTS.length} products
+                </div>
               </div>
-              <div className="rounded-full border border-border/70 bg-background/60 px-4 py-1">Real-time insights</div>
-              <div className="rounded-full border border-border/70 bg-background/60 px-4 py-1">AI-powered variations</div>
             </div>
-          </div>
-          <div className="flex gap-6">
-            <div className="rounded-2xl border border-border bg-background/70 p-4 text-center shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Products Live</p>
-              <p className="mt-2 text-3xl font-bold text-foreground">{PRODUCTS.length}</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-background/70 p-4 text-center shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Industries</p>
-              <p className="mt-2 text-3xl font-bold text-foreground">{categories.length}</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">Browse the catalog</h2>
-          <p className="text-sm text-muted-foreground">
-            Compare top-performing experiences and experiment-ready components.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-2 text-sm text-muted-foreground">
-          Showing{" "}
-          <span className="font-semibold text-foreground">{filteredProducts.length}</span>
-          {filteredProducts.length === 1 ? "product" : "products"}
-        </div>
-      </div>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="rounded-md bg-muted px-2 py-1 font-medium text-foreground">
+                  Search powered
+                </span>
+                <span>Surface insights faster with catalog-wide intelligence.</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <label htmlFor="catalog-sort" className="text-xs font-semibold uppercase text-muted-foreground">
+                  Sort by
+                </label>
+                <select
+                  id="catalog-sort"
+                  value={sortOption}
+                  onChange={(event) => setSortOption(event.target.value)}
+                  className="rounded-lg border border-border bg-card/80 px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
+                >
+                  <option value="featured">Featured</option>
+                  <option value="price-low-high">Price: Low to High</option>
+                  <option value="price-high-low">Price: High to Low</option>
+                  <option value="rating">Customer Rating</option>
+                </select>
+              </div>
+            </div>
 
-      <div className="rounded-3xl border border-border bg-card/70 px-6 py-5 shadow-sm backdrop-blur">
-        <div className="grid gap-4 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <label htmlFor="catalog-search" className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
-              Search products
-            </label>
-            <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.5"
-                    d="m17.5 17.5-3.75-3.75M9.583 4.167a5.417 5.417 0 1 1 0 10.833 5.417 5.417 0 0 1 0-10.833Z"
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    isSelected={selectedProductId === product.id}
+                    onSelect={() => onSelectProduct(product.id)}
+                    onOpenVariations={() => onOpenVariations(product.id)}
+                    previewVariationId={previewVariationId}
                   />
-                </svg>
-              </span>
-              <input
-                id="catalog-search"
-                type="search"
-                value={searchTerm}
-                onChange={handleSearchChange}
-                placeholder="Search by name, category, or feature"
-                className="w-full rounded-2xl border border-border bg-background/80 py-2.5 pl-11 pr-4 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="catalog-category" className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
-              Category
-            </label>
-            <select
-              id="catalog-category"
-              value={selectedCategory}
-              onChange={(event) => setSelectedCategory(event.target.value)}
-              className="w-full rounded-2xl border border-border bg-background/80 px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="all">All categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-1">
-            <div>
-              <label htmlFor="catalog-price" className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
-                Price range
-              </label>
-              <select
-                id="catalog-price"
-                value={priceFilter}
-                onChange={(event) => setPriceFilter(event.target.value)}
-                className="w-full rounded-2xl border border-border bg-background/80 px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="all">Any budget</option>
-                <option value="under-100">Under $100</option>
-                <option value="100-250">$100 to $250</option>
-                <option value="above-250">Above $250</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="catalog-sort" className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
-                Sort by
-              </label>
-              <select
-                id="catalog-sort"
-                value={sortOption}
-                onChange={(event) => setSortOption(event.target.value)}
-                className="w-full rounded-2xl border border-border bg-background/80 px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="featured">Featured</option>
-                <option value="price-low-high">Price: Low to High</option>
-                <option value="price-high-low">Price: High to Low</option>
-              </select>
+                ))
+              ) : (
+                <div className="col-span-full rounded-2xl border border-dashed border-border/70 bg-muted/40 p-12 text-center">
+                  <h3 className="text-lg font-semibold text-foreground">No products match those filters</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Try adjusting your filters to broaden the results and discover more components.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredProducts.length > 0 ? (
-          filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              isSelected={selectedProductId === product.id}
-              onSelect={() => onSelectProduct(product.id)}
-              onOpenVariations={() => onOpenVariations(product.id)}
-              previewVariationId={previewVariationId}
-            />
-          ))
-        ) : (
-          <div className="col-span-full rounded-3xl border border-dashed border-border/70 bg-muted/30 p-12 text-center">
-            <h3 className="text-lg font-semibold text-foreground">No products match those filters</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Try adjusting your search terms or categories to discover more components.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   )

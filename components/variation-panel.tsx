@@ -420,7 +420,7 @@ export default function VariationPanel({ onClose, onSelectVariation, previewVari
                           variant="outline"
                           onClick={() => {}}
                           disabled={creationState !== "idle"}
-                          className="border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-100"
+                          className="border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-800 hover:bg-slate-100 "
                         >
                           Import from Figma
                         </Button>

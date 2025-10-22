@@ -11,6 +11,9 @@ interface Product {
   price: number
   image: string
   category: string
+  brand?: string
+  rating?: number
+  discount?: number
 }
 
 interface ProductCardProps {
@@ -83,6 +86,7 @@ export default function ProductCard({
         <div className="flex-1">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">{product.category}</p>
           <h3 className="text-lg font-semibold text-foreground">{product.name}</h3>
+          {product.brand && <p className="text-xs text-muted-foreground">by {product.brand}</p>}
         </div>
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Ours</p>

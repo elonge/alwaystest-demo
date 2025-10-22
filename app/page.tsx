@@ -61,7 +61,7 @@ export default function Home() {
     <main className="min-h-screen bg-background">
       <div className="flex h-screen">
         {/* Main Product Grid - Left Side */}
-        <div className="flex-1 overflow-auto border-r border-border">
+        <div className="flex-1 overflow-hidden border-r border-border">
           <ProductGrid
             selectedProductId={selectedProductId}
             onSelectProduct={handleSelectProduct}

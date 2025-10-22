@@ -108,13 +108,11 @@ export default function VariationPreview({ productId, variationId, onClose }: Va
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex flex-1 flex-col">
       {/* Preview Area */}
-      <div className="flex-1 overflow-auto p-8 flex items-center justify-center">
-        <div className="w-full">{renderVariationPreview()}</div>
-      </div>
+      <div className="mx-auto w-full">{renderVariationPreview()}</div>
     </div>
-  )
+  );
 }
 
 // Variation Preview Components
@@ -159,8 +157,8 @@ function PriceHighlightPreview({ product }: { product: Product }) {
         <p className="text-5xl font-black leading-tight">${product.price}</p>
         <p className="text-sm">Ends today • Free shipping</p>
       </div>
-      <div className="grid grid-cols-3 gap-6 p-6 items-center bg-card">
-        <div className="col-span-2 space-y-3">
+      <div className="grid gap-6 bg-card p-6 sm:grid-cols-3 sm:items-center">
+        <div className="space-y-3 sm:col-span-2">
           <h3 className="text-xl font-semibold text-foreground">{product.name}</h3>
           <p className="text-sm text-muted-foreground">
             Save big on our best-selling product with highlighted pricing up front.
@@ -170,8 +168,8 @@ function PriceHighlightPreview({ product }: { product: Product }) {
             <span>30-day returns</span>
           </div>
         </div>
-        <div className="col-span-1">
-          <div className="aspect-square overflow-hidden rounded-xl border border-border/60 bg-muted flex items-center justify-center">
+        <div className="flex justify-center sm:col-span-1 sm:justify-end">
+          <div className="flex aspect-square w-28 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-muted">
             <img
               src={product.image || "/placeholder.svg"}
               alt={product.name}
@@ -311,16 +309,22 @@ function ComparisonPreview({ product }: { product: Product }) {
         </div>
       </div>
       <div className="divide-y divide-border/60">
-        <div className="grid grid-cols-3 bg-muted/30 px-6 py-3 text-xs font-semibold uppercase text-muted-foreground">
+        <div className="hidden bg-muted/30 px-6 py-3 text-xs font-semibold uppercase text-muted-foreground sm:grid sm:grid-cols-3">
           <span>Feature</span>
-          <span className="text-primary">Ours</span>
-          <span>Theirs</span>
+          <span className="text-primary text-center">Ours</span>
+          <span className="text-right">Theirs</span>
         </div>
         {features.map((feature) => (
-          <div key={feature.name} className="grid grid-cols-3 px-6 py-4 text-sm">
-            <span className="font-medium text-foreground">{feature.name}</span>
-            <span className="text-primary">{feature.ours}</span>
-            <span className="text-muted-foreground">{feature.theirs}</span>
+          <div key={feature.name} className="grid gap-2 px-6 py-4 text-sm sm:grid-cols-3 sm:items-center">
+            <div className="font-medium text-foreground">{feature.name}</div>
+            <div className="text-primary sm:text-center">
+              <span className="mr-1 text-xs font-semibold uppercase text-muted-foreground sm:hidden">Ours</span>
+              {feature.ours}
+            </div>
+            <div className="text-muted-foreground sm:text-right">
+              <span className="mr-1 text-xs font-semibold uppercase text-muted-foreground sm:hidden">Theirs</span>
+              {feature.theirs}
+            </div>
           </div>
         ))}
       </div>
@@ -619,10 +623,10 @@ function HoverFloatPreview({ product }: { product: Product }) {
   ]
 
   return (
-    <div className="group relative mx-auto max-w-xl">
+    <div className="group relative w-full">
       <div className="absolute inset-0 rounded-3xl bg-primary/10 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
       <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-lg transition-all duration-300 group-hover:-translate-y-3 group-hover:shadow-2xl">
-        <div className="bg-muted/50 p-6 flex items-center gap-5 transition-colors duration-300 group-hover:bg-muted/40">
+        <div className="flex flex-col gap-5 bg-muted/50 p-6 transition-colors duration-300 group-hover:bg-muted/40 sm:flex-row sm:items-center">
           <div className="h-20 w-20 overflow-hidden rounded-2xl border border-border bg-card shadow-inner transition-transform duration-300 group-hover:-translate-y-1 group-hover:rotate-1 group-hover:shadow-lg">
             <img
               src={product.image || "/placeholder.svg"}
@@ -641,19 +645,25 @@ function HoverFloatPreview({ product }: { product: Product }) {
         </div>
 
         <div className="divide-y divide-border/60">
-          <div className="grid grid-cols-3 bg-muted/30 px-6 py-3 text-xs font-semibold uppercase text-muted-foreground">
+          <div className="hidden bg-muted/30 px-6 py-3 text-xs font-semibold uppercase text-muted-foreground sm:grid sm:grid-cols-3">
             <span>Feature</span>
-            <span className="text-primary">Ours</span>
-            <span>Theirs</span>
+            <span className="text-primary text-center">Ours</span>
+            <span className="text-right">Theirs</span>
           </div>
           {comparisonFeatures.map((feature) => (
             <div
               key={feature.name}
-              className="grid grid-cols-3 px-6 py-4 text-sm transition-colors duration-300 group-hover:bg-muted/20"
+              className="grid gap-2 px-6 py-4 text-sm transition-colors duration-300 group-hover:bg-muted/20 sm:grid-cols-3 sm:items-center"
             >
-              <span className="font-medium text-foreground">{feature.name}</span>
-              <span className="text-primary">{feature.ours}</span>
-              <span className="text-muted-foreground">{feature.theirs}</span>
+              <div className="font-medium text-foreground">{feature.name}</div>
+              <div className="text-primary sm:text-center">
+                <span className="mr-1 text-xs font-semibold uppercase text-muted-foreground sm:hidden">Ours</span>
+                {feature.ours}
+              </div>
+              <div className="text-muted-foreground sm:text-right">
+                <span className="mr-1 text-xs font-semibold uppercase text-muted-foreground sm:hidden">Theirs</span>
+                {feature.theirs}
+              </div>
             </div>
           ))}
         </div>
@@ -682,9 +692,9 @@ function FastBuyPreview({ product }: { product: Product }) {
   ]
 
   return (
-    <div className="mx-auto max-w-4xl rounded-3xl border border-primary/40 bg-card shadow-xl overflow-hidden">
-      <div className="flex flex-col gap-8 p-8 lg:flex-row lg:items-center lg:gap-10">
-        <div className="relative mx-auto h-52 w-52 overflow-hidden rounded-3xl border border-primary/20 bg-muted/30 shadow-inner transition-all duration-300 lg:mx-0 lg:h-56 lg:w-56">
+    <div className="w-full overflow-hidden rounded-3xl border border-primary/40 bg-card shadow-xl">
+      <div className="flex flex-col gap-6 p-6">
+        <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-3xl border border-primary/20 bg-muted/30 shadow-inner transition-all duration-300">
           <img
             src={product.image || "/placeholder.svg"}
             alt={product.name}
@@ -695,7 +705,7 @@ function FastBuyPreview({ product }: { product: Product }) {
           </div>
         </div>
 
-        <div className="flex-1 space-y-6">
+        <div className="space-y-5">
           <div className="space-y-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary">Fast decision</p>
             <h3 className="text-3xl font-semibold text-foreground">{product.name}</h3>
@@ -703,17 +713,17 @@ function FastBuyPreview({ product }: { product: Product }) {
               Essential details upfront with a single action that gets you checked out in seconds.
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <p className="text-4xl font-bold text-primary sm:text-5xl">${product.price}</p>
+          <div className="space-y-2">
+            <p className="text-4xl font-bold text-primary">${product.price}</p>
             <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
               In stock · Free express shipping
             </span>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="grid gap-2">
             {quickBenefits.map((benefit) => (
               <div
                 key={benefit.label}
-                className="flex flex-1 items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-3 py-2 text-sm text-muted-foreground"
+                className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-3 py-2 text-sm text-muted-foreground"
               >
                 <span className="text-lg">{benefit.icon}</span>
                 <span>{benefit.label}</span>
@@ -723,7 +733,7 @@ function FastBuyPreview({ product }: { product: Product }) {
           <button className="w-full rounded-xl bg-primary px-6 py-4 text-lg font-semibold text-primary-foreground shadow-lg transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl">
             Buy now
           </button>
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-xs text-primary sm:text-sm">
+          <div className="flex flex-col gap-1 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-xs text-primary">
             <span className="font-semibold uppercase tracking-[0.2em] text-primary">1-click enabled</span>
             <span className="text-muted-foreground">Secure payment in under 10 seconds.</span>
           </div>
